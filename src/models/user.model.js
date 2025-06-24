@@ -25,11 +25,11 @@ const userSchema = new Schema({
     },
     avatar: {
         type: String,
-        required: true,
+        // required: true,
     },
     password: {
         type: String,
-        required: [true, 'Password is required']
+        // required: [true, 'Password is required']
     },
     refreshToken: {
         type: String,

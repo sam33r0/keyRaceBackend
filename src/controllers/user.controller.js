@@ -2,6 +2,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
+import oAuth2Client from "../utils/googleConfig..js";
+import axios from "axios";
 const login = asyncHandler(async (req, res, next) => {
     const { email, password } = req.body;
 
@@ -88,6 +90,47 @@ const register = asyncHandler(async (req, res, next) => {
 
 })
 
+const googleLogin = asyncHandler(async (req, res, next) => {
+    const { code } = req.query;
+    console.log('code recieved', code);
+
+    const googleRes = await oAuth2Client.getToken(code)
+    console.log('received googleRes');
+
+    oAuth2Client.setCredentials(googleRes.tokens)
+    console.log('received googleRes 2', googleRes);
+    const userRes = await axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`)
+    console.log('userRes ', userRes);
+
+    const { email, name, picture } = userRes.data;
+    let user = await User.findOne({ email })
+    if (!user)
+        user = await User.create({
+            fullName: name,
+            email,
+            username: name,
+            avatar: picture,
+
+        })
+    const { accessToken, refreshToken } = await generateToken(user);
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    user.accessToken = accessToken;
+    user.refreshToken = refreshToken;
+    const userObj = user.toObject();
+    delete userObj.password;
+    return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(
+        new ApiResponse(200,
+            {
+                'user': userObj, accessToken, refreshToken,
+            },
+            "User logged In Successfully"
+        ))
+
+})
+
 const generateToken = async (user) => {
     try {
         const accessToken = await user.generateAccessToken();
@@ -123,5 +166,6 @@ const logoutUser = asyncHandler(async (req, res) => {
 export {
     login,
     register,
-    logoutUser
+    logoutUser,
+    googleLogin
 }
