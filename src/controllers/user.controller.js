@@ -98,9 +98,9 @@ const googleLogin = asyncHandler(async (req, res, next) => {
     console.log('received googleRes');
 
     oAuth2Client.setCredentials(googleRes.tokens)
-    console.log('received googleRes 2', googleRes);
+    // console.log('received googleRes 2', googleRes);
     const userRes = await axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`)
-    console.log('userRes ', userRes);
+    // console.log('userRes ', userRes);
 
     const { email, name, picture } = userRes.data;
     let user = await User.findOne({ email })
@@ -121,6 +121,7 @@ const googleLogin = asyncHandler(async (req, res, next) => {
     user.refreshToken = refreshToken;
     const userObj = user.toObject();
     delete userObj.password;
+    
     return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(
         new ApiResponse(200,
             {
