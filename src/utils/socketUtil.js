@@ -31,9 +31,15 @@ const socketConnec = (io) => {
                 let index = room.findIndex(user => user.socketId === socket.id);
 
                 if (index !== -1) {
+                    let isHost = false;
+                    if (room[index].isHost) {
+                        isHost = true;
+                    }
                     const user = room.splice(index, 1)[0];
-
                     // Notify the room that the user has disconnected
+                    if (room.length > 0 && isHost) {
+                        room[0].isHost = true;
+                    }
                     io.to(roomCode).emit('room-update', {
                         message: `${user.username} has left the room`,
                         users: room, // Send the updated list of users
@@ -54,7 +60,7 @@ const socketConnec = (io) => {
             }
             rooms[obj.roomCode].push({ socketId: socket.id, username: obj.userData.username, avatar: obj.userData.avatar, isHost: true });
             io.to(obj.roomCode).emit('room-update', {
-                message: `User ${obj.userData.username} has joined the room`,
+                message: `${obj.userData.username} has joined the room`,
                 users: rooms[obj.roomCode], // Send the list of users in the room
             });
             // io.to(obj.roomCode).emit('test', `testing ${JSON.stringify(obj)}`)
@@ -63,11 +69,14 @@ const socketConnec = (io) => {
         socket.on('join-room', (obj) => {
             socket.join(obj.roomCode);
             // console.log('received d', obj);
+            let makeHost = false;
             if (!rooms[obj.roomCode]) {
                 rooms[obj.roomCode] = [];
             }
+            if (rooms[obj.roomCode].length === 0)
+                makeHost = true;
 
-            rooms[obj.roomCode].push({ socketId: socket.id, username: obj.userData.username, avatar: obj.userData.avatar, isHost: false });
+            rooms[obj.roomCode].push({ socketId: socket.id, username: obj.userData.username, avatar: obj.userData.avatar, isHost: makeHost });
 
             // Notify the room about the new user joining
             io.to(obj.roomCode).emit('room-update', {
@@ -86,14 +95,14 @@ const socketConnec = (io) => {
 
                 io.to(roomCode).emit('game-start', {
                     par: para[ind].text,
-                    time: 10000
+                    time: para[ind].time * 1000
                 });
                 if (!timer[roomCode]) {
                     timer[roomCode] = setTimeout(() => {
                         io.to(roomCode).emit('game-stop', room);
                         clearTimeout(timer[roomCode]);
                         timer[roomCode] = null;
-                    }, 10000);
+                    }, para[ind].time * 1000);
                 }
             } else {
                 socket.emit('error-message', 'Only the host can start the game.');

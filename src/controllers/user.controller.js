@@ -47,7 +47,7 @@ const login = asyncHandler(async (req, res, next) => {
 const register = asyncHandler(async (req, res, next) => {
     // const { email, username, password } = req.body;
     const { username, email, fullName, password, avatar } = req.body;
-    console.log('called register ', username, email, fullName);
+    // console.log('called register ', username, email, fullName);
 
     if (
         [fullName, email, username, password].some((field) => field?.trim() === "")

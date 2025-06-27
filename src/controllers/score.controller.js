@@ -4,10 +4,8 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const addScore = asyncHandler(async (req, res) => {
-    console.log('hi i am testing');
     const user = req.user;
     const { accuracy, mistypes, finalScore, averageWpm } = req.body;
-    console.log('averageWpm', averageWpm, 'mistypes', mistypes, 'finalScore', finalScore, 'accuracy', accuracy);
     if (!user) {
         throw new ApiError(400, 'unauthorized request')
     }
@@ -25,7 +23,7 @@ const addScore = asyncHandler(async (req, res) => {
     // console.log(user, score);
     res.status(200).json(new ApiResponse(200, {
         score
-    }, "testing add score"))
+    }, "saved score"))
 })
 
 const getPastHistory = asyncHandler(async (req, res) => {
