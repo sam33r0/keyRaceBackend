@@ -1,11 +1,29 @@
+import fs from 'fs/promises';
+
 const socketConnec = (io) => {
     let rooms = {};
-
+    let timer = {};
     io.on('connection', (socket) => {
         console.log('a user connected', socket.id);
         // socket.on('bktest', (e) => {
         //     console.log(e);
         // })
+        socket.on('score-update', (data) => {
+            for (let roomCode in rooms) {
+                let room = rooms[roomCode];
+                let index = room.findIndex(user => user.socketId === socket.id);
+                if (index !== -1) {
+                    room[index].progress = data.progress;
+                    room.sort((a, b) => b.progress - a.progress);
+                    io.to(roomCode).emit('roomScore-update', {
+                        message: `${room[index].username} current progress ${data.progress}`,
+                        users: room, // Send the updated list of users
+                    });
+                    break;
+                }
+            }
+
+        })
         socket.on('disconnect', () => {
             console.log(`Socket ${socket.id} disconnected`);
             for (let roomCode in rooms) {
@@ -58,11 +76,25 @@ const socketConnec = (io) => {
             });
             // io.to(obj.roomCode).emit('test', `testing if joined ${JSON.stringify(obj)}`)
         })
-        socket.on('start-game', (roomCode) => {
+        socket.on('start-game', async (roomCode) => {
             const room = rooms[roomCode];
             const host = room?.find(u => u.isHost);
             if (host?.socketId === socket.id) {
-                io.to(roomCode).emit('game-start');
+                const data = await fs.readFile('./paragraph.json', 'utf-8');
+                const para = JSON.parse(data);
+                const ind = Math.floor(Math.random() * (para.length));
+
+                io.to(roomCode).emit('game-start', {
+                    par: para[ind].text,
+                    time: 10000
+                });
+                if (!timer[roomCode]) {
+                    timer[roomCode] = setTimeout(() => {
+                        io.to(roomCode).emit('game-stop', room);
+                        clearTimeout(timer[roomCode]);
+                        timer[roomCode] = null;
+                    }, 10000);
+                }
             } else {
                 socket.emit('error-message', 'Only the host can start the game.');
             }
