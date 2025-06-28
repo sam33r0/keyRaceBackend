@@ -30,7 +30,8 @@ const login = asyncHandler(async (req, res, next) => {
     const { refreshToken, accessToken } = await generateToken(user);
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None',
     }
     user.accessToken = accessToken;
     user.refreshToken = refreshToken;
@@ -115,13 +116,15 @@ const googleLogin = asyncHandler(async (req, res, next) => {
     const { accessToken, refreshToken } = await generateToken(user);
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None',
+
     }
     user.accessToken = accessToken;
     user.refreshToken = refreshToken;
     const userObj = user.toObject();
     delete userObj.password;
-    
+
     return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(
         new ApiResponse(200,
             {
@@ -160,6 +163,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true,
         secure: true,
+        sameSite: 'None',
+
     }
     return res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new ApiResponse(200, {}, "user logged out successfully"));
 
