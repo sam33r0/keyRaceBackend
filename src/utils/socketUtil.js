@@ -98,11 +98,19 @@ const socketConnec = (io) => {
                     time: para[ind].time * 1000
                 });
                 if (!timer[roomCode]) {
-                    timer[roomCode] = setTimeout(() => {
-                        io.to(roomCode).emit('game-stop', room);
-                        clearTimeout(timer[roomCode]);
-                        timer[roomCode] = null;
-                    }, para[ind].time * 1000);
+                    let remaining = para[ind].time;
+
+                    timer[roomCode] = setInterval(() => {
+                        if (remaining <= 0) {
+                            clearInterval(timer[roomCode]);
+                            timer[roomCode] = null;
+                            io.to(roomCode).emit('game-stop', room);
+                            return;
+                        }
+
+                        io.to(roomCode).emit('time-update', remaining); // broadcast remaining time
+                        remaining -= 1;
+                    }, 1000);
                 }
             } else {
                 socket.emit('error-message', 'Only the host can start the game.');
